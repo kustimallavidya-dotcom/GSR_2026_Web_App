@@ -191,6 +191,7 @@ Page Number: ${pageNum}
                 <div class="chat-question">प्रश्न: ${question}</div>
                 <div class="chat-answer" style="color:#ef4444;">
                     <p>AI सोबत कनेक्ट करण्यात अडचण आली. कृपया तुमची API Key तपासा.</p>
+                    <p style="font-size: 0.8rem; margin-top: 10px; color: #fca5a5;">Technical Error: ${error.message || error}</p>
                 </div>
             `;
         }
