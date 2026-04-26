@@ -1,0 +1,260 @@
+:root {
+    --bg-dark: #0f172a;
+    --bg-darker: #020617;
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --text-light: #f8fafc;
+    --text-muted: #94a3b8;
+    --glass-bg: rgba(30, 41, 59, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Outfit', sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, var(--bg-darker) 0%, var(--bg-dark) 100%);
+    color: var(--text-light);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.screen.active {
+    opacity: 1;
+    pointer-events: all;
+    z-index: 10;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* --- Splash Screen --- */
+#splash-screen {
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle, #1e293b 0%, #020617 100%);
+}
+
+.train-container {
+    position: relative;
+    width: 200px;
+    height: 60px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.train {
+    font-size: 40px;
+    position: absolute;
+    left: -50px;
+    animation: trainMove 3s linear forwards;
+}
+
+.track {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 4px;
+    background: repeating-linear-gradient(90deg, #475569, #475569 10px, transparent 10px, transparent 20px);
+}
+
+@keyframes trainMove {
+    0% { left: -50px; }
+    100% { left: 200px; }
+}
+
+#splash-text {
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    background: -webkit-linear-gradient(#60a5fa, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    height: 60px;
+}
+
+.credit {
+    position: absolute;
+    bottom: 20px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+/* --- Glass UI --- */
+.glass-container {
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.glass-card, .glass-panel, .chat-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.glass-card {
+    padding: 40px 30px;
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+}
+
+.glass-card h2 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.glass-card p {
+    color: var(--text-muted);
+    margin-bottom: 30px;
+}
+
+.small-text {
+    font-size: 0.8rem;
+    margin-top: 15px !important;
+    margin-bottom: 0 !important;
+}
+
+/* --- Buttons & Inputs --- */
+.primary-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.primary-btn:hover {
+    background: var(--primary-hover);
+}
+
+.full-width {
+    width: 100%;
+    margin-top: 15px;
+}
+
+.google-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.icon-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 10px;
+    color: var(--text-light);
+}
+
+/* --- Home Screen --- */
+.app-header {
+    padding: 20px;
+    border-radius: 0 0 24px 24px;
+    margin-bottom: 20px;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.lang-badge {
+    background: rgba(59, 130, 246, 0.2);
+    color: #93c5fd;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.search-container {
+    display: flex;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 5px 15px;
+}
+
+.search-container input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: white;
+    padding: 10px 0;
+    font-size: 1rem;
+    outline: none;
+}
+
+.search-container input::placeholder {
+    color: var(--text-muted);
+}
+
+.chat-history {
+    flex: 1;
+    padding: 0 20px 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.chat-card {
+    padding: 15px;
+}
+
+.chat-question {
+    font-weight: 600;
+    color: #60a5fa;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.chat-answer {
+    line-height: 1.6;
+    color: #e2e8f0;
+}
+
+.chat-meta {
+    margin-top: 15px;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    background: rgba(0,0,0,0.2);
+    padding: 8px;
+    border-radius: 6px;
+}

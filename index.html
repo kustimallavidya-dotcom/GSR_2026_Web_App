@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>G&SR 2026 Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="screen active">
+        <div class="train-container">
+            <div class="train">🚂</div>
+            <div class="track"></div>
+        </div>
+        <h1 id="splash-text"></h1>
+        <div class="credit">Created By Milind Manugade</div>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen glass-container hidden">
+        <div class="glass-card">
+            <h2>Welcome</h2>
+            <p>Sign in to access G&SR rules</p>
+            <button id="google-login-btn" class="primary-btn">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google Logo" class="google-icon">
+                Login with Google
+            </button>
+            <p class="small-text">API Keys will be configured automatically.</p>
+        </div>
+    </div>
+
+    <!-- Home Screen -->
+    <div id="home-screen" class="screen hidden">
+        <header class="app-header glass-panel">
+            <div class="header-top">
+                <h2>G&SR 2026</h2>
+                <span class="lang-badge">Lang: Auto</span>
+            </div>
+            
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Ask your question...">
+                <button id="voice-btn" class="icon-btn" title="Voice Input">🎤</button>
+            </div>
+            <button id="ask-btn" class="primary-btn full-width">Ask Question</button>
+        </header>
+
+        <main class="chat-history" id="chat-history">
+            <!-- Chat cards will appear here -->
+        </main>
+    </div>
+
+    <script src="database.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

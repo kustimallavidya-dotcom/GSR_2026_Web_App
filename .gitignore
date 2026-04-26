@@ -1,0 +1,3 @@
+# Ignore the original PDF to save space
+*.pdf
+__pycache__/
