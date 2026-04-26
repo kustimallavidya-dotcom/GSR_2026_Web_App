@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function initGemini(key) {
         try {
             genAI = new GoogleGenerativeAI(key);
-            model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            model = genAI.getGenerativeModel({ model: "gemini-pro" });
             return true;
         } catch (e) {
             console.error("Gemini init failed:", e);
