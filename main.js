@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const askBtn = document.getElementById('ask-btn');
     const voiceBtn = document.getElementById('voice-btn');
     const chatHistory = document.getElementById('chat-history');
+    const resetKeyBtn = document.getElementById('reset-key-btn');
 
     // --- State ---
     let genAI = null;
@@ -81,6 +82,15 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Please enter a valid API Key.");
         }
     });
+
+    if(resetKeyBtn) {
+        resetKeyBtn.addEventListener('click', () => {
+            if(confirm("Are you sure you want to remove your API Key?")) {
+                localStorage.removeItem('gemini_api_key');
+                window.location.reload();
+            }
+        });
+    }
 
     // --- Home Screen Logic ---
     async function addChatCard(question) {
