@@ -53,11 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     splashScreen.classList.add('hidden');
                     
                     if (localStorage.getItem('gemini_api_key')) {
-                        // Go direct to home
                         homeScreen.classList.remove('hidden');
                         setTimeout(() => homeScreen.classList.add('active'), 50);
                     } else {
-                        // Go to login/config
                         loginScreen.classList.remove('hidden');
                         setTimeout(() => loginScreen.classList.add('active'), 50);
                     }
@@ -88,37 +86,69 @@ document.addEventListener('DOMContentLoaded', () => {
     async function addChatCard(question) {
         const card = document.createElement('div');
         card.className = 'chat-card glass-panel';
-        card.innerHTML = `<div class="chat-question">प्रश्न: ${question}</div><div class="chat-answer">शोधत आहे... (Searching offline & analyzing with AI)</div>`;
+        card.innerHTML = `<div class="chat-question">प्रश्न: ${question}</div><div class="chat-answer">शोधत आहे... (Translating query & analyzing rules...)</div>`;
         chatHistory.prepend(card);
         
         try {
-            // 1. Offline Database Search
+            // 1. Translate User Query into English Keywords for Offline Search
+            let searchKeywords = question;
+            if (model) {
+                const keywordPrompt = `Translate the essence of this query into 2-3 English root words separated by spaces. This will be used to search an English Railway PDF document. Examples: If query is "पॉइनसतस्मान ड्युटीवर झोप काढत असल्यास", return "pointsman sleep duty". If query is "सिग्नल लाल असताना", return "signal danger red". 
+Query: ${question}
+Return ONLY the English keywords.`;
+                const keywordResult = await model.generateContent(keywordPrompt);
+                searchKeywords = keywordResult.response.text().trim();
+                console.log("English Search Keywords: ", searchKeywords);
+            }
+
+            // 2. Offline Database Search using translated keywords
             let results = [];
             if (window.searchRules) {
-                results = await window.searchRules(question);
+                results = await window.searchRules(searchKeywords);
             }
             
             if (!results || results.length === 0) {
+                // If offline search fails, maybe the wording was too strict. 
+                // Let's ask Gemini if it knows generally based on its training, but mention it's an AI answer, not direct PDF match.
+                const fallbackPrompt = `
+You are a strict Railway Rule Assistant. The user asked: "${question}".
+We couldn't find the exact match in our local PDF search index. 
+Based on standard Indian Railways G&SR rules, answer this question strictly in this format:
+
+उत्तर:
+<Answer in Marathi>
+<Answer in Hindi>
+<Answer in English>
+
+Rule Number: <General Rule number if you know it, otherwise say "Not found in local PDF">
+`;
+                const fallbackResult = await model.generateContent(fallbackPrompt);
+                const fallbackText = fallbackResult.response.text().replace(/\n/g, '<br>');
+
                 card.innerHTML = `
                     <div class="chat-question">प्रश्न: ${question}</div>
-                    <div class="chat-answer">
-                        <p>माफ करा, या प्रश्नासाठी PDF मध्ये कोणताही संबंधित नियम सापडला नाही.</p>
+                    <div class="chat-answer" style="margin-top: 10px;">
+                        <p style="color:#fbbf24; font-size:0.8rem; margin-bottom:10px;">[PDF मधून थेट शब्द न सापडल्याने AI च्या जनरल माहितीनुसार उत्तर दिले आहे]</p>
+                        ${fallbackText}
                     </div>
                 `;
                 return;
             }
 
-            const topResult = results[0];
-            const ruleContext = topResult.text;
-            const pageNum = topResult.page;
+            // If we found results, combine the top 3 results for better context
+            let combinedContext = "";
+            let pageNum = results[0].page;
+            for(let i=0; i < Math.min(3, results.length); i++) {
+                combinedContext += results[i].text + "\n\n";
+            }
 
-            // 2. AI Processing
+            // 3. AI Processing
             const prompt = `
 You are a strict Railway Rule Assistant based on the G&SR 2026 PDF.
-Do NOT use external knowledge. Use ONLY the following PDF rule content to answer the user's question.
+Use ONLY the following PDF rule content context to answer the user's question.
 
 PDF Content Context:
-${ruleContext}
+${combinedContext}
 
 User Question: ${question}
 
@@ -129,14 +159,13 @@ Format your response STRICTLY exactly as follows:
 <Answer in Hindi based ONLY on the content>
 <Answer in English based ONLY on the content>
 
-Rule Number: <Extract the rule number from the text if present, else write "Not specifically numbered">
+Rule Number: <Extract the specific rule number from the text if present, else write "Not specifically numbered">
 Page Number: ${pageNum}
 `;
 
             const result = await model.generateContent(prompt);
             const aiResponseText = result.response.text();
             
-            // Format output safely (convert newlines to <br>)
             const formattedOutput = aiResponseText.replace(/\n/g, '<br>');
 
             card.innerHTML = `
