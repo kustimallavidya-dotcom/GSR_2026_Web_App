@@ -19,16 +19,16 @@
         <div class="credit">Created By Milind Manugade</div>
     </div>
 
-    <!-- Login Screen -->
+    <!-- Login / Config Screen -->
     <div id="login-screen" class="screen glass-container hidden">
         <div class="glass-card">
-            <h2>Welcome</h2>
-            <p>Sign in to access G&SR rules</p>
-            <button id="google-login-btn" class="primary-btn">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google Logo" class="google-icon">
-                Login with Google
+            <h2>G&SR Setup</h2>
+            <p>Please enter your Gemini API Key</p>
+            <input type="password" id="api-key-input" placeholder="AIzaSy..." style="width:100%; padding:10px; margin-bottom:15px; border-radius:8px; border:none; outline:none; background:rgba(255,255,255,0.1); color:white;">
+            <button id="save-key-btn" class="primary-btn">
+                Save & Continue
             </button>
-            <p class="small-text">API Keys will be configured automatically.</p>
+            <p class="small-text" style="margin-top:10px;">Your key is stored securely in your browser's local storage.</p>
         </div>
     </div>
 
@@ -53,6 +53,6 @@
     </div>
 
     <script src="database.js"></script>
-    <script src="main.js"></script>
+    <script type="module" src="main.js"></script>
 </body>
 </html>

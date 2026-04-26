@@ -1,3 +1,5 @@
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai";
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- UI Elements ---
     const splashScreen = document.getElementById('splash-screen');
@@ -5,12 +7,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const homeScreen = document.getElementById('home-screen');
     
     const splashText = document.getElementById('splash-text');
-    const googleLoginBtn = document.getElementById('google-login-btn');
+    const apiKeyInput = document.getElementById('api-key-input');
+    const saveKeyBtn = document.getElementById('save-key-btn');
     
     const searchInput = document.getElementById('search-input');
     const askBtn = document.getElementById('ask-btn');
     const voiceBtn = document.getElementById('voice-btn');
     const chatHistory = document.getElementById('chat-history');
+
+    // --- State ---
+    let genAI = null;
+    let model = null;
+
+    // --- Initialization ---
+    const savedKey = localStorage.getItem('gemini_api_key');
+    if (savedKey) {
+        initGemini(savedKey);
+    }
+
+    function initGemini(key) {
+        try {
+            genAI = new GoogleGenerativeAI(key);
+            model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            return true;
+        } catch (e) {
+            console.error("Gemini init failed:", e);
+            return false;
+        }
+    }
 
     // --- Splash Screen Logic ---
     const textToType = "G&SR 2026";
@@ -22,75 +46,115 @@ document.addEventListener('DOMContentLoaded', () => {
             typeIndex++;
             setTimeout(typeWriter, 150);
         } else {
-            // Typing done, wait a bit then show login
+            // Typing done, wait a bit then check login
             setTimeout(() => {
                 splashScreen.classList.remove('active');
                 setTimeout(() => {
                     splashScreen.classList.add('hidden');
-                    loginScreen.classList.remove('hidden');
-                    // slight delay to trigger opacity transition
-                    setTimeout(() => loginScreen.classList.add('active'), 50);
-                }, 500); // Wait for fade out
+                    
+                    if (localStorage.getItem('gemini_api_key')) {
+                        // Go direct to home
+                        homeScreen.classList.remove('hidden');
+                        setTimeout(() => homeScreen.classList.add('active'), 50);
+                    } else {
+                        // Go to login/config
+                        loginScreen.classList.remove('hidden');
+                        setTimeout(() => loginScreen.classList.add('active'), 50);
+                    }
+                }, 500);
             }, 1000);
         }
     }
 
-    // Start Splash
     setTimeout(typeWriter, 500);
 
-    // --- Login Logic ---
-    googleLoginBtn.addEventListener('click', () => {
-        // Mock Google Login
-        loginScreen.classList.remove('active');
-        setTimeout(() => {
-            loginScreen.classList.add('hidden');
-            homeScreen.classList.remove('hidden');
-            setTimeout(() => homeScreen.classList.add('active'), 50);
-        }, 500);
+    // --- Login/Config Logic ---
+    saveKeyBtn.addEventListener('click', () => {
+        const key = apiKeyInput.value.trim();
+        if (key && initGemini(key)) {
+            localStorage.setItem('gemini_api_key', key);
+            loginScreen.classList.remove('active');
+            setTimeout(() => {
+                loginScreen.classList.add('hidden');
+                homeScreen.classList.remove('hidden');
+                setTimeout(() => homeScreen.classList.add('active'), 50);
+            }, 500);
+        } else {
+            alert("Please enter a valid API Key.");
+        }
     });
 
     // --- Home Screen Logic ---
     async function addChatCard(question) {
         const card = document.createElement('div');
         card.className = 'chat-card glass-panel';
-        
-        // Show loading state
-        card.innerHTML = `<div class="chat-question">प्रश्न: ${question}</div><div class="chat-answer">शोधत आहे... (Searching...)</div>`;
+        card.innerHTML = `<div class="chat-question">प्रश्न: ${question}</div><div class="chat-answer">शोधत आहे... (Searching offline & analyzing with AI)</div>`;
         chatHistory.prepend(card);
         
-        // Use our database search
-        let results = [];
-        if (window.searchRules) {
-            results = await window.searchRules(question);
-        }
-        
-        let answerHTML = '';
-        if (results && results.length > 0) {
-            const topResult = results[0];
-            // Get a snippet
-            const snippet = topResult.text.substring(0, 300) + '...';
+        try {
+            // 1. Offline Database Search
+            let results = [];
+            if (window.searchRules) {
+                results = await window.searchRules(question);
+            }
             
-            // Note: Since we don't have Gemini API key yet, this is the raw matched text.
-            answerHTML = `
+            if (!results || results.length === 0) {
+                card.innerHTML = `
+                    <div class="chat-question">प्रश्न: ${question}</div>
+                    <div class="chat-answer">
+                        <p>माफ करा, या प्रश्नासाठी PDF मध्ये कोणताही संबंधित नियम सापडला नाही.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const topResult = results[0];
+            const ruleContext = topResult.text;
+            const pageNum = topResult.page;
+
+            // 2. AI Processing
+            const prompt = `
+You are a strict Railway Rule Assistant based on the G&SR 2026 PDF.
+Do NOT use external knowledge. Use ONLY the following PDF rule content to answer the user's question.
+
+PDF Content Context:
+${ruleContext}
+
+User Question: ${question}
+
+Format your response STRICTLY exactly as follows:
+
+उत्तर:
+<Answer in Marathi based ONLY on the content>
+<Answer in Hindi based ONLY on the content>
+<Answer in English based ONLY on the content>
+
+Rule Number: <Extract the rule number from the text if present, else write "Not specifically numbered">
+Page Number: ${pageNum}
+`;
+
+            const result = await model.generateContent(prompt);
+            const aiResponseText = result.response.text();
+            
+            // Format output safely (convert newlines to <br>)
+            const formattedOutput = aiResponseText.replace(/\n/g, '<br>');
+
+            card.innerHTML = `
                 <div class="chat-question">प्रश्न: ${question}</div>
-                <div class="chat-answer">
-                    <p style="color:#fbbf24; font-size:0.8rem; margin-bottom:10px;">[Offline Search Mode: Gemini API Not Configured]</p>
-                    <p><strong>Raw Rule Extract:</strong> ${snippet}</p>
-                </div>
-                <div class="chat-meta">
-                    Page Number: ${topResult.page}
+                <div class="chat-answer" style="margin-top: 10px;">
+                    ${formattedOutput}
                 </div>
             `;
-        } else {
-            answerHTML = `
+            
+        } catch (error) {
+            console.error("Error generating answer:", error);
+            card.innerHTML = `
                 <div class="chat-question">प्रश्न: ${question}</div>
-                <div class="chat-answer">
-                    <p>माफ करा, या प्रश्नासाठी PDF मध्ये कोणताही संबंधित नियम सापडला नाही.</p>
+                <div class="chat-answer" style="color:#ef4444;">
+                    <p>AI सोबत कनेक्ट करण्यात अडचण आली. कृपया तुमची API Key तपासा.</p>
                 </div>
             `;
         }
-        
-        card.innerHTML = answerHTML;
     }
 
     askBtn.addEventListener('click', async () => {
@@ -109,27 +173,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Voice Input (Web Speech API) ---
+    // --- Voice Input ---
     voiceBtn.addEventListener('click', () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
-            alert("Voice input is not supported in your browser. Please try Chrome.");
+            alert("Voice input is not supported in your browser.");
             return;
         }
 
         const recognition = new SpeechRecognition();
-        recognition.lang = 'mr-IN'; // Default to Marathi for testing
+        recognition.lang = 'mr-IN';
         recognition.interimResults = false;
         recognition.maxAlternatives = 1;
 
-        voiceBtn.style.color = '#ef4444'; // Red mic while listening
+        voiceBtn.style.color = '#ef4444'; 
         
         recognition.start();
 
         recognition.onresult = (event) => {
-            const speechResult = event.results[0][0].transcript;
-            searchInput.value = speechResult;
-            voiceBtn.style.color = '#f8fafc'; // Reset
+            searchInput.value = event.results[0][0].transcript;
+            voiceBtn.style.color = '#f8fafc';
         };
 
         recognition.onspeechend = () => {
@@ -137,8 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
             voiceBtn.style.color = '#f8fafc';
         };
 
-        recognition.onerror = (event) => {
-            console.error('Speech recognition error detected: ' + event.error);
+        recognition.onerror = () => {
             voiceBtn.style.color = '#f8fafc';
         };
     });
